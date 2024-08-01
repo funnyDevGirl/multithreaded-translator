@@ -69,6 +69,7 @@ dependencies {
 	implementation("org.openapitools:jackson-databind-nullable:0.2.6")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	runtimeOnly("org.postgresql:postgresql")
+	runtimeOnly("com.h2database:h2")
 }
 
 tasks.withType<Test>() {
