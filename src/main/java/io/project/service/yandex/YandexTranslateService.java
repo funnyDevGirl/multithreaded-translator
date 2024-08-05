@@ -1,5 +1,7 @@
 package io.project.service.yandex;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.project.exception.LanguageNotFoundException;
 import io.project.exception.TranslationResourceAccessException;
 import io.project.model.SupportedLanguagesResponse;
@@ -10,9 +12,11 @@ import io.project.repository.TranslationRepository;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
+
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -28,6 +32,7 @@ import java.util.stream.Collectors;
 public class YandexTranslateService {
 
     private static final String API_KEY = "YOUR_API_KEY"; // Если требуется авторизация
+    private static final String TRANSLATE_URL = "https://translate.api.cloud.yandex.net/translate/v2/translate";
     private static final String API_URL = "https://translate.api.cloud.yandex.net/translate/v2/languages";
     private static final String FOLDER_ID = "YOUR_FOLDER_ID";
 
@@ -44,7 +49,7 @@ public class YandexTranslateService {
 
 
     public String translate(String inputText, String sourceLang, String targetLang, String ipAddress) {
-        // Validation
+        // validation
         List<Language> supportedLanguages = fetchSupportedLanguages();
 
         if (isContainsLang(sourceLang, supportedLanguages)) {
@@ -79,14 +84,43 @@ public class YandexTranslateService {
         return finishedText;
     }
 
-    private String translateWord(String word, String sourceLang, String targetLang) {
-        // calling the Google translation service using RestTemplate
-        String url = "https://api.translation.service/translate?text={text}&source={source}&target={target}";
+    public String translateWord(String word, String sourceLang, String targetLang) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + API_KEY);
 
+        String requestBody = String.format(
+                "{\"sourceLanguageCode\":\"%s\",\"targetLanguageCode\":\"%s\",\"texts\":[\"%s\"]}",
+                sourceLang, targetLang, word);
+
+        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                TRANSLATE_URL, entity, String.class);
+
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return parseTranslatedWord(response.getBody());
+        } else {
+            throw new TranslationResourceAccessException("Ошибка доступа к ресурсу перевода"
+                    + response.getStatusCode());
+        }
+    }
+
+    private String parseTranslatedWord(String responseBody) {
+        ObjectMapper objectMapper = new ObjectMapper();
         try {
-            return restTemplate.getForObject(url, String.class, word, sourceLang, targetLang);
-        } catch (RestClientException e) {
-            throw new TranslationResourceAccessException("Ошибка доступа к ресурсу перевода");
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            JsonNode translationsNode = rootNode.path("translations");
+
+            if (translationsNode.isArray() && !translationsNode.isEmpty()) {
+                return translationsNode.get(0).path("text").asText();
+            } else {
+                throw new TranslationResourceAccessException(
+                        "Ошибка доступа к ресурсу перевода: неверный формат ответа");
+            }
+        } catch (Exception e) {
+            throw new TranslationResourceAccessException("Ошибка доступа к ресурсу перевода: "
+                    + e.getMessage());
         }
     }
 
@@ -97,42 +131,18 @@ public class YandexTranslateService {
     public List<Language> fetchSupportedLanguages() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + API_KEY);
 
-        // Создание тела запроса
-        String requestBody = "{\"folderId\": \"" + FOLDER_ID + "\"}";
-        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<SupportedLanguagesResponse> responseEntity =
-                Objects.requireNonNull(restTemplate)
-                        .postForEntity(API_URL, requestEntity, SupportedLanguagesResponse.class);
-        //       restTemplate.getForObject(API_URL, SupportedLanguagesResponse.class);
+        ResponseEntity<SupportedLanguagesResponse> response = restTemplate.exchange(
+                API_URL, HttpMethod.GET, entity, SupportedLanguagesResponse.class);
 
-        return Objects.requireNonNull(responseEntity.getBody()).getLanguages();
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return Objects.requireNonNull(response.getBody()).getLanguages();
+        } else {
+            throw new RuntimeException("Не удалось получить список поддерживаемых языков: "
+                    + response.getStatusCode());
+        }
     }
-
-// другой способ:
-//    public List<Language> fetchSupportedLanguages() throws IOException, InterruptedException, URISyntaxException {
-//        HttpClient client = HttpClient.newHttpClient();
-//
-//        // Тело запроса
-//        String requestBody = new ObjectMapper().writeValueAsString(Map.of("folderId", FOLDER_ID));
-//
-//        HttpRequest request = HttpRequest.newBuilder()
-//                .uri(new URI(API_URL))
-//                .header("Content-Type", "application/json")
-//                //.header("Authorization", "Bearer " + API_KEY) // Если требуется авторизация
-//                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-//                .build();
-//
-//        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-//
-//        SupportedLanguagesResponse supportedLanguagesResponse = new SupportedLanguagesResponse();
-//        if (response.statusCode() == 200) {
-//            ObjectMapper objectMapper = new ObjectMapper();
-//            supportedLanguagesResponse = objectMapper.readValue(response.body(), SupportedLanguagesResponse.class);
-//        } else {
-//            System.err.println("Error: " + response.statusCode() + " - " + response.body());
-//        }
-//        return supportedLanguagesResponse.getLanguages();
-//    }
 }
