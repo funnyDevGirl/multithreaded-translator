@@ -24,8 +24,8 @@ public class SupportedLanguagesController {
 
     @PostMapping("/translate")
     public ResponseEntity<TranslationResponseDTO> translate(@RequestBody TranslationRequestDTO requestDTO,
-                                                            @RequestHeader(value = "X-Forwarded-For", defaultValue = "127.0.0.1")
-                                                                String ipAddress) {
+                                                            @RequestHeader(value = "X-Forwarded-For",
+                                                                    defaultValue = "127.0.0.1") String ipAddress) {
 
         String translatedText = translationService.translate(requestDTO.getInputText(),
                                                             requestDTO.getSourceLanguage(),
