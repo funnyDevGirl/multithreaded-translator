@@ -1,0 +1,34 @@
+package io.project.model;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.GeneratedValue;
+import jakarta.validation.constraints.NotBlank;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import static jakarta.persistence.GenerationType.IDENTITY;
+
+
+@Entity
+@Table(name = "translation")
+@EntityListeners(AuditingEntityListener.class)
+@Getter
+@Setter
+@EqualsAndHashCode
+public class Translation implements BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = IDENTITY)
+    private long id;
+
+    private String ipAddress;
+
+    @NotBlank
+    private String inputText;
+
+    private String translatedText;
+}
