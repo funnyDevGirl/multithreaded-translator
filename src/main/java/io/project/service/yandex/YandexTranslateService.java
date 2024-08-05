@@ -31,13 +31,12 @@ public class YandexTranslateService {
     private static final String API_URL = "https://translate.api.cloud.yandex.net/translate/v2/languages";
     private static final String FOLDER_ID = "YOUR_FOLDER_ID";
 
-
     private final RestTemplate restTemplate;
     private final TranslationRepository repository;
     private static final int MAX_THREADS = 10;
     private final ExecutorService executor = Executors.newFixedThreadPool(MAX_THREADS);
 
-    private final List<Language> supportedLanguages = fetchSupportedLanguages();;
+    //private final List<Language> supportedLanguages = fetchSupportedLanguages();
 
     public YandexTranslateService(RestTemplate restTemplate,
                                   TranslationRepository repository) {
@@ -48,6 +47,8 @@ public class YandexTranslateService {
 
     public String translate(String inputText, String sourceLang, String targetLang, String ipAddress) {
         // Validation
+        List<Language> supportedLanguages = fetchSupportedLanguages();
+
         if (isContainsLang(sourceLang, supportedLanguages)) {
             throw new LanguageNotFoundException("Не найден исходный язык: " + sourceLang);
         }
@@ -104,7 +105,8 @@ public class YandexTranslateService {
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         ResponseEntity<SupportedLanguagesResponse> responseEntity =
-                restTemplate.postForEntity(API_URL, requestEntity, SupportedLanguagesResponse.class);
+                Objects.requireNonNull(restTemplate)
+                        .postForEntity(API_URL, requestEntity, SupportedLanguagesResponse.class);
         //       restTemplate.getForObject(API_URL, SupportedLanguagesResponse.class);
 
         return Objects.requireNonNull(responseEntity.getBody()).getLanguages();
