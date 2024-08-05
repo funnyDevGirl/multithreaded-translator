@@ -11,6 +11,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -23,11 +24,12 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 
+@Service
 public class YandexTranslateService {
 
     private static final String API_KEY = "YOUR_API_KEY"; // Если требуется авторизация
     private static final String API_URL = "https://translate.api.cloud.yandex.net/translate/v2/languages";
-    private static final String FOLDER_ID = "your_folder_id";
+    private static final String FOLDER_ID = "YOUR_FOLDER_ID";
 
 
     private final RestTemplate restTemplate;
@@ -109,6 +111,7 @@ public class YandexTranslateService {
         return Objects.requireNonNull(responseEntity.getBody()).getLanguages();
     }
 
+// другой способ:
 //    public List<Language> fetchSupportedLanguages() throws IOException, InterruptedException, URISyntaxException {
 //        HttpClient client = HttpClient.newHttpClient();
 //
