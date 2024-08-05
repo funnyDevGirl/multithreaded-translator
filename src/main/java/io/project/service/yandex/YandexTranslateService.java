@@ -37,13 +37,12 @@ public class YandexTranslateService {
     private static final int MAX_THREADS = 10;
     private final ExecutorService executor = Executors.newFixedThreadPool(MAX_THREADS);
 
-    private final List<Language> supportedLanguages;
+    private final List<Language> supportedLanguages = fetchSupportedLanguages();;
 
     public YandexTranslateService(RestTemplate restTemplate,
                                   TranslationRepository repository) {
         this.restTemplate = restTemplate;
         this.repository = repository;
-        this.supportedLanguages = fetchSupportedLanguages();
     }
 
 
