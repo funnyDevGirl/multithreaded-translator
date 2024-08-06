@@ -53,6 +53,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter")
+	implementation("org.springframework.retry:spring-retry")
 	implementation("javax.servlet:javax.servlet-api:4.0.1")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

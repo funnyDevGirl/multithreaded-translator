@@ -1,6 +1,6 @@
 package io.project.mapper;
 
-import io.project.dto.TranslationRequestDTO;
+import io.project.dto.TranslationDTO;
 import io.project.model.Translation;
 import io.project.repository.TranslationRepository;
 import org.mapstruct.Mapper;
@@ -21,5 +21,5 @@ public abstract class TranslationMapper {
     @Autowired
     private TranslationRepository translationRepository;
 
-    public abstract TranslationRequestDTO map(Translation translation);
+    public abstract TranslationDTO map(Translation translation);
 }

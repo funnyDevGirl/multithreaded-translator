@@ -1,4 +1,4 @@
-package io.project.service.yandex;
+package io.project.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +9,7 @@ import io.project.model.SupportedLanguagesResponse.Language;
 
 import io.project.model.Translation;
 import io.project.repository.TranslationRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import org.springframework.web.client.RestTemplate;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.annotation.Backoff;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,10 +34,14 @@ import java.util.stream.Collectors;
 @Service
 public class YandexTranslateService {
 
-    private static final String API_KEY = "YOUR_API_KEY"; // Если требуется авторизация
-    private static final String TRANSLATE_URL = "https://translate.api.cloud.yandex.net/translate/v2/translate";
-    private static final String API_URL = "https://translate.api.cloud.yandex.net/translate/v2/languages";
-    private static final String FOLDER_ID = "YOUR_FOLDER_ID";
+    @Value("${api-key}")
+    private String apiKey;
+
+    @Value("${translate-url}")
+    private String translateUrl;
+
+    @Value("${api-url}")
+    private String apiUrl;
 
     private final RestTemplate restTemplate;
     private final TranslationRepository repository;
@@ -47,8 +54,12 @@ public class YandexTranslateService {
         this.repository = repository;
     }
 
-
+    @Retryable(
+            retryFor = { Exception.class },
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 1000, multiplier = 2))
     public String translate(String inputText, String sourceLang, String targetLang, String ipAddress) {
+
         // validation
         List<Language> supportedLanguages = fetchSupportedLanguages();
 
@@ -85,9 +96,10 @@ public class YandexTranslateService {
     }
 
     public String translateWord(String word, String sourceLang, String targetLang) {
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + API_KEY);
+        headers.set("Authorization", "Bearer " + apiKey);
 
         String requestBody = String.format(
                 "{\"sourceLanguageCode\":\"%s\",\"targetLanguageCode\":\"%s\",\"texts\":[\"%s\"]}",
@@ -96,7 +108,7 @@ public class YandexTranslateService {
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
         ResponseEntity<String> response = restTemplate.postForEntity(
-                TRANSLATE_URL, entity, String.class);
+                translateUrl, entity, String.class);
 
         if (response.getStatusCode() == HttpStatus.OK) {
             return parseTranslatedWord(response.getBody());
@@ -107,6 +119,7 @@ public class YandexTranslateService {
     }
 
     private String parseTranslatedWord(String responseBody) {
+
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             JsonNode rootNode = objectMapper.readTree(responseBody);
@@ -129,14 +142,15 @@ public class YandexTranslateService {
     }
 
     public List<Language> fetchSupportedLanguages() {
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + API_KEY);
+        headers.set("Authorization", "Bearer " + apiKey);
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<SupportedLanguagesResponse> response = restTemplate.exchange(
-                API_URL, HttpMethod.GET, entity, SupportedLanguagesResponse.class);
+                apiUrl, HttpMethod.GET, entity, SupportedLanguagesResponse.class);
 
         if (response.getStatusCode() == HttpStatus.OK) {
             return Objects.requireNonNull(response.getBody()).getLanguages();
