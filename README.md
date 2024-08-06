@@ -9,12 +9,16 @@
 Requirements:
 * JDK 21
 * Gradle
-#### To run the program, run: ```make dev```
-#### Compile the code: ```make install```
+
+To run the program, run: ```make dev```
+
+Compile the code: ```make install```
 
 ---
 ### Authentication in the Translate API
 To work with the Translate API, you need to get an IAM token for your Yandex account, which is required for authentication.
+
+You can read the [instructions for getting the key on the Yandex website](https://yandex.cloud/ru/docs/translate/api-ref/authentication).
 
 Pass the received token in the Authorization header of each request in the format:
 
