@@ -13,8 +13,7 @@ Requirements:
 To run the program, run: ```make dev```
 
 Compile the code: ```make install```
-
----
+###
 ### Authentication in the Translate API
 To work with the Translate API, you need to get an IAM token for your Yandex account, which is required for authentication.
 
@@ -27,13 +26,13 @@ Authorization: Bearer <IAM-токен>
 ```
 
 ##### Set up an API connection:
-Get the key and enter it instead of "YOUR_API_KEY" in the application.yml file:
+Get the key and enter it instead of "YOUR_API_KEY" in  ```application.yml```:
 ```yaml
 api-key: "YOUR_API_KEY"
 translate-url: "https://translate.api.cloud.yandex.net/translate/v2/translate"
 api-url: "https://translate.api.cloud.yandex.net/translate/v2/languages"
 ```
----
+###
 ### Methods for the Yandex Translate service
 * ```fetchSupportedLanguages()``` - Retrieves the list of supported languages:
 
