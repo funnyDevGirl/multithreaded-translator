@@ -138,7 +138,7 @@ public class YandexTranslateService {
     }
 
     private boolean isContainsLang(String lang, List<Language> languages) {
-        return languages.stream().noneMatch(l -> l.getCode().equals(lang));
+        return languages.stream().anyMatch(l -> l.getCode().equals(lang));
     }
 
     public List<Language> fetchSupportedLanguages() {
